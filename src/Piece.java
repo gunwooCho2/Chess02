@@ -13,6 +13,7 @@ class Pawn extends Piece {
     boolean firstMove = true;
     private ArrayList<Position> Hunts = new ArrayList<>();
     private ArrayList<Position> moves = new ArrayList<>();
+    Position checkPosition;
     public Pawn(boolean whiteTeam) {
         name = "Pawn";
         this.whiteTeam = whiteTeam;
@@ -27,9 +28,10 @@ class Pawn extends Piece {
                                         firstMove?
                                         new ArrayList<>(Arrays.asList(new Position(0, -1), new Position(0, -2))):
                                         new ArrayList<>(List.of(new Position(0, -1)));
+        checkPosition = white?pos.add(new Position(0, 1)):pos.add(new Position(0, -1));
         for(Position p : pawnMoves) {
             Position addPos = pos.add(p);
-            if(!posBool.containsKey(addPos) && addPos.checkPosition()) {
+            if(!posBool.containsKey(checkPosition) && addPos.checkPosition()) {
                 moves.add(addPos);
             }
         }

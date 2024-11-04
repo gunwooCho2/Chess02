@@ -2,27 +2,25 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 public class ChessGui extends JFrame {
-	private String[] piecesString = new String[] { "Rook", "Knight", "Bishop", "Queen" };
+	private final String[] piecesString = new String[] { "Rook", "Knight", "Bishop", "Queen" };
 	private ChessShell selectShell = null;
 	private ArrayList<Position> canMoves;
 	private ArrayList<Position> canHunts;
 	private Map<Piece, Position> piecePos = new HashMap<>();
-	private Map<Position, ChessShell> shellPos = new HashMap<>();
+	private final Map<Position, ChessShell> shellPos = new HashMap<>();
 	private boolean whiteTurn = true;
-	private ArrayList<Position> changedShellPos = new ArrayList<>();
+	private final ArrayList<Position> changedShellPos = new ArrayList<>();
 	private boolean checkForEnemy = false;
 	private boolean checkForMe = false;
 	private King whiteKing;
 	private King blackKing;
 	private boolean check = false;
-	private JPanel selcePanel;
 	private String selectPiece = null;
 	private Rook whiteKingSideRook;
 	private Rook whiteQueenSideRook;
@@ -30,6 +28,7 @@ public class ChessGui extends JFrame {
 	private Rook blackQueenSideRook;
 	private Map<Position, String> castlingMap = new HashMap<>();
 	private Map<Position, Boolean> enPassantMap;
+	private boolean mateCheck = false;
 
 	public ChessGui() {
 		boolean white = true;
@@ -190,10 +189,6 @@ public class ChessGui extends JFrame {
 	        piecePos = new HashMap<>(testPos);
 	    }
 
-	    if (checkForEnemy) {
-	        System.out.println("체크!");
-	    }
-
 	    departShell.setPiece();
 	    arrivalShell.setPiece(piece);
 	    
@@ -223,9 +218,6 @@ public class ChessGui extends JFrame {
 	                piecePos.remove(piece);
 	                piecePos.put(promotionsPiece, arrivaPos);
 	                checkCheck(piecePos);
-	                if (checkForEnemy) {
-	                	System.out.println("체크!");
-	                }
 	            }
 	        }
 	    } else if (piece instanceof Rook) {
@@ -233,16 +225,30 @@ public class ChessGui extends JFrame {
 	    } else if (piece instanceof King) {
 	        ((King) piece).firstMove = false;
 	    }
+		mateCheck = mateCheck();
+		System.out.println(mateCheck);
+		if (mateCheck) {
+			checkCheck(piecePos);
+			if (checkForEnemy) {
+				System.out.println("체크메이트!!");
+			}
+			else{
+				System.out.println("스테일메이트...");
+			}
+		}
+		else if (checkForEnemy){
+			System.out.println("체크!");
+		}
 	    whiteTurn = !whiteTurn;
 	}
 
 	public void hunt(ChessShell departShell, ChessShell arrivalShell) {
 	    Map<Piece, Position> testPos = new HashMap<>(piecePos);
-	    Position arrivaPos = arrivalShell.getPosition();
+	    Position arrivalPos = arrivalShell.getPosition();
 	    Piece departPiece = departShell.getPiece();
 	    Piece arrivalPiece = arrivalShell.getPiece();
 
-	    testPos.put(departPiece, arrivaPos);
+	    testPos.put(departPiece, arrivalPos);
 	    testPos.remove(arrivalPiece);
 	    checkCheck(testPos);
 	    if (checkForMe) {
@@ -253,16 +259,12 @@ public class ChessGui extends JFrame {
 	        piecePos = new HashMap<>(testPos);
 	    }
 
-	    if (checkForEnemy) {
-	        System.out.println("체크!");
-	    }
-
 	    departShell.setPiece();
 	    arrivalShell.setPiece(departPiece);
 	    
 	    if (departPiece instanceof Pawn) {
 	        ((Pawn) departPiece).firstMove = false;
-	        if (arrivaPos.getY() == 8 || arrivaPos.getY() == 1) {
+	        if (arrivalPos.getY() == 8 || arrivalPos.getY() == 1) {
 	            selectDialog();
 	            Piece promotionsPiece = null;
 	            switch (selectPiece) {
@@ -284,7 +286,8 @@ public class ChessGui extends JFrame {
 	            if (promotionsPiece != null) {
 	                arrivalShell.setPiece(promotionsPiece);
 	                piecePos.remove(departPiece);
-	                piecePos.put(promotionsPiece, arrivaPos);
+	                piecePos.put(promotionsPiece, arrivalPos);
+					checkCheck(piecePos);
 	            }
 	        }
 	    } else if (departPiece instanceof Rook) {
@@ -292,9 +295,21 @@ public class ChessGui extends JFrame {
 	    } else if (departPiece instanceof King) {
 	        ((King) departPiece).firstMove = false;
 	    }
+		mateCheck = mateCheck();
+		System.out.println(mateCheck);
+		if (mateCheck) {
+			if (checkForEnemy) {
+				System.out.println("체크메이트!!");
+			}
+			else{
+				System.out.println("스테일메이트...");
+			}
+		}
+		else if (checkForEnemy){
+			System.out.println("체크!");
+		}
 	    whiteTurn = !whiteTurn;
 	}
-
 
 	public void checkCheck(Map<Piece, Position> piecePos) {
 		checkForMe = false;
@@ -327,6 +342,68 @@ public class ChessGui extends JFrame {
 				checkForEnemy = true;
 			}
 		}
+	}
+	public Boolean mateCheck(){
+		boolean hasLegalMove = false;
+		Map<Position, Boolean> posBool = new HashMap<>();
+		Map<Piece, Position> piecePosCopy = new HashMap<>(piecePos);
+		for (Map.Entry<Piece, Position> entry : piecePosCopy.entrySet()) {
+			posBool.put(entry.getValue(), entry.getKey().whiteTeam);
+		}
+		// 현재 플레이어의 모든 기물을 순회
+		for (Map.Entry<Piece, Position> mapEntry : piecePosCopy.entrySet()) {
+			Piece piece = mapEntry.getKey();
+			Position pos = mapEntry.getValue();
+
+			// 현재 턴인 플레이어의 기물만 고려
+			if (piece.whiteTeam == whiteTurn) continue;
+
+			// 현재 보드의 상태를 반영한 위치 정보 맵 생성
+
+			// 가능한 모든 움직임과 공격 위치 가져오기 (지역 변수 사용)
+			ArrayList<Position> possibleMoves = piece.canMove(posBool, pos, !whiteTurn);
+			ArrayList<Position> possibleHunts = piece.canHunt(posBool, pos, !whiteTurn);
+
+			// 움직임을 지역 변수로 복사하여 사용
+			ArrayList<Position> localCanMoves = new ArrayList<>(possibleMoves);
+			ArrayList<Position> localCanHunts = new ArrayList<>(possibleHunts);
+
+			// 가능한 모든 움직임을 확인
+			for (Position move : localCanMoves) {
+				Map<Piece, Position> testPos = new HashMap<>(piecePos);
+				testPos.put(piece, move);
+				checkCheck(testPos); // 이 움직임 후에 왕이 체크 상태인지 확인
+
+				if (!checkForEnemy) { // 움직임 후 왕이 체크 상태가 아니라면
+					System.out.println(piece.name + piece.whiteTeam);
+					hasLegalMove = true;
+					break; // 더 이상 확인할 필요 없음
+				}
+			}
+
+			if (hasLegalMove) break; // 합법적인 움직임을 찾았으므로 종료
+
+			// 가능한 모든 공격(캡처)을 확인
+			for (Position hunt : localCanHunts) {
+				Map<Piece, Position> testPos = new HashMap<>(piecePos);
+				Piece capturedPiece = shellPos.get(hunt).getPiece();
+				if (capturedPiece != null) {
+					testPos.remove(capturedPiece); // 캡처한 기물 제거
+				}
+				testPos.put(piece, hunt); // 기물을 공격 위치로 이동
+				checkCheck(testPos); // 이 공격 후에 왕이 체크 상태인지 확인
+
+				if (!checkForEnemy) { // 공격 후 왕이 체크 상태가 아니라면
+					System.out.println(piece.name);
+					hasLegalMove = true;
+					break; // 더 이상 확인할 필요 없음
+				}
+			}
+		}
+		if (!hasLegalMove) {
+			return true;
+		}
+		return false;
 	}
 
 	public void selectDialog() {
@@ -414,9 +491,6 @@ public class ChessGui extends JFrame {
 		for (int i = 0; i < 3; i++) {
 			testPos.put(whiteKing, whiteKingPos.add(new Position(i, 0)));
 			checkCheck(testPos);
-			if (checkForEnemy && i == 2) {
-				System.out.println("체크!");
-			}
 			if (checkForMe) {
 				check = true;
 				System.out.println("캐슬링 불가 조건입니다");
@@ -431,6 +505,19 @@ public class ChessGui extends JFrame {
 		shellPos.get(rookPos).setPiece(whiteKingSideRook);
 		piecePos.put(whiteKing, whiteKingPos);
 		piecePos.put(whiteKingSideRook, rookPos);
+		mateCheck = mateCheck();
+		checkCheck(piecePos);
+		if (mateCheck) {
+			if (checkForEnemy) {
+				System.out.println("체크메이트!!");
+			}
+			else{
+				System.out.println("스테일메이트...");
+			}
+		}
+		else if (checkForEnemy){
+			System.out.println("체크!");
+		}
 		whiteKing.firstMove = false;
 		whiteKingSideRook.firstMove = false;
 		castlingMap.clear();
@@ -442,9 +529,6 @@ public class ChessGui extends JFrame {
 		for (int i = 0; i < 4; i++) {
 			testPos.put(whiteKing, whiteKingPos.add(new Position(-i, 0)));
 			checkCheck(testPos);
-			if (checkForEnemy && i == -2) {
-				System.out.println("체크!");
-			}
 			if (checkForMe) {
 				check = true;
 				System.out.println("캐슬링 불가 조건입니다");
@@ -459,6 +543,19 @@ public class ChessGui extends JFrame {
 		shellPos.get(rookPos).setPiece(whiteQueenSideRook);
 		piecePos.put(whiteKing, whiteKingPos);
 		piecePos.put(whiteQueenSideRook, rookPos);
+		mateCheck = mateCheck();
+		checkCheck(piecePos);
+		if (mateCheck) {
+			if (checkForEnemy) {
+				System.out.println("체크메이트!!");
+			}
+			else{
+				System.out.println("스테일메이트...");
+			}
+		}
+		else if (checkForEnemy){
+			System.out.println("체크!");
+		}
 		whiteKing.firstMove = false;
 		whiteQueenSideRook.firstMove = false;
 		castlingMap.clear();
@@ -470,9 +567,6 @@ public class ChessGui extends JFrame {
 		for (int i = 0; i < 3; i++) {
 			testPos.put(blackKing, blackKingPos.add(new Position(i, 0)));
 			checkCheck(testPos);
-			if (checkForEnemy && i == 2) {
-				System.out.println("체크!");
-			}
 			if (checkForMe) {
 				check = true;
 				System.out.println("캐슬링 불가 조건입니다");
@@ -487,6 +581,19 @@ public class ChessGui extends JFrame {
 		shellPos.get(rookPos).setPiece(blackKingSideRook);
 		piecePos.put(blackKing, blackKingPos);
 		piecePos.put(blackKingSideRook, rookPos);
+		mateCheck = mateCheck();
+		checkCheck(piecePos);
+		if (mateCheck) {
+			if (checkForEnemy) {
+				System.out.println("체크메이트!!");
+			}
+			else{
+				System.out.println("스테일메이트...");
+			}
+		}
+		else if (checkForEnemy){
+			System.out.println("체크!");
+		}
 		blackKing.firstMove = false;
 		blackKingSideRook.firstMove = false;
 		castlingMap.clear();
@@ -498,9 +605,6 @@ public class ChessGui extends JFrame {
 		for (int i = 0; i < 4; i++) {
 			testPos.put(blackKing, blackKingPos.add(new Position(-i, 0)));
 			checkCheck(testPos);
-			if (checkForEnemy && i == -2) {
-				System.out.println("체크!");
-			}
 			if (checkForMe) {
 				check = true;
 				System.out.println("캐슬링 불가 조건입니다");
@@ -515,6 +619,19 @@ public class ChessGui extends JFrame {
 		shellPos.get(rookPos).setPiece(blackQueenSideRook);
 		piecePos.put(blackKing, blackKingPos);
 		piecePos.put(blackQueenSideRook, rookPos);
+		mateCheck = mateCheck();
+		checkCheck(piecePos);
+		if (mateCheck) {
+			if (checkForEnemy) {
+				System.out.println("체크메이트!!");
+			}
+			else{
+				System.out.println("스테일메이트...");
+			}
+		}
+		else if (checkForEnemy){
+			System.out.println("체크!");
+		}
 		blackKing.firstMove = false;
 		blackQueenSideRook.firstMove = false;
 		castlingMap.clear();
