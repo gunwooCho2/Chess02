@@ -53,11 +53,12 @@ class Pawn extends Piece {
     }
 }
 
-class Look extends Piece {
-    static Position[] lookMoves = {new Position(1, 0), new Position(-1, 0), new Position(0, 1), new Position(0, -1)};
+class Rook extends Piece {
+    static Position[] rookMoves = {new Position(1, 0), new Position(-1, 0), new Position(0, 1), new Position(0, -1)};
     private ArrayList<Position> Hunts = new ArrayList<>();
     private ArrayList<Position> moves = new ArrayList<>();
-    public Look(boolean whiteTeam) {
+    boolean firstMove = true;
+    public Rook(boolean whiteTeam) {
         name = "Look";
         this.whiteTeam = whiteTeam;
     }
@@ -65,10 +66,10 @@ class Look extends Piece {
     public ArrayList<Position> canMove(Map<Position, Boolean> posBool, Position pos, boolean white) {
         moves.clear();
         Hunts.clear();
-        for (Position lookMove : lookMoves) {
+        for (Position rookMove : rookMoves) {
             Position addpos = pos;
             while (true){
-                addpos = addpos.add(lookMove);
+                addpos = addpos.add(rookMove);
                 if (addpos.checkPosition()) {
                     if (!posBool.containsKey(addpos)) {
                         moves.add(addpos);
@@ -211,12 +212,15 @@ class King extends Piece {
                                    new Position(1, 0), new Position(-1, 0), new Position(0, 1), new Position(0, -1)};
     private ArrayList<Position> Hunts = new ArrayList<>();
     private ArrayList<Position> moves = new ArrayList<>();
+    boolean firstMove = true;
     public King(boolean whiteTeam) {
         name = "King";
         this.whiteTeam = whiteTeam;
     }
     @Override
     public ArrayList<Position> canMove(Map<Position, Boolean> posBool, Position pos, boolean white) {
+    	moves.clear();
+    	Hunts.clear();
         for (Position kingMove : kingMoves) {
             Position addpos = pos.add(kingMove);
             if (addpos.checkPosition()) {

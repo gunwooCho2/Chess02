@@ -29,4 +29,7 @@ public class Position {
     public Boolean checkPosition(){
         return x < 9 && y < 9 && x > 0 && y > 0;
     }
+    public int getY() {
+    	return y;
+    }
 }
