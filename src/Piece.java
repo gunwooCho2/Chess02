@@ -1,3 +1,4 @@
+import java.lang.foreign.AddressLayout;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -28,12 +29,22 @@ class Pawn extends Piece {
                                         firstMove?
                                         new ArrayList<>(Arrays.asList(new Position(0, -1), new Position(0, -2))):
                                         new ArrayList<>(List.of(new Position(0, -1)));
-        checkPosition = white?pos.add(new Position(0, 1)):pos.add(new Position(0, -1));
-        for(Position p : pawnMoves) {
-            Position addPos = pos.add(p);
-            if(!posBool.containsKey(checkPosition) && addPos.checkPosition()) {
-                moves.add(addPos);
-            }
+        int j = 0;
+        Position checkedOne = white?pos.add(new Position(0, 1)):pos.add(new Position(0, -1));
+        Position checkedTwo = white?pos.add(new Position(0, 2)):pos.add(new Position(0, -2));
+        if (!posBool.containsKey(checkedOne) && checkedTwo.checkPosition()) {
+        	if (!posBool.containsKey(checkedTwo) && checkedTwo.checkPosition()) {
+        		j = 2;
+        	}
+        	else {
+        		j = 1;
+        	}
+        }
+        for(int i = 0; i < j; i++) {
+        	if (i < pawnMoves.size()) {
+        		Position addPos = pos.add(pawnMoves.get(i));
+        		moves.add(addPos);
+        	}
         }
         return moves;
     }

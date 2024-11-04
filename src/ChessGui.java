@@ -226,7 +226,6 @@ public class ChessGui extends JFrame {
 	        ((King) piece).firstMove = false;
 	    }
 		mateCheck = mateCheck();
-		System.out.println(mateCheck);
 		if (mateCheck) {
 			checkCheck(piecePos);
 			if (checkForEnemy) {
@@ -350,53 +349,43 @@ public class ChessGui extends JFrame {
 		for (Map.Entry<Piece, Position> entry : piecePosCopy.entrySet()) {
 			posBool.put(entry.getValue(), entry.getKey().whiteTeam);
 		}
-		// 현재 플레이어의 모든 기물을 순회
 		for (Map.Entry<Piece, Position> mapEntry : piecePosCopy.entrySet()) {
 			Piece piece = mapEntry.getKey();
 			Position pos = mapEntry.getValue();
 
-			// 현재 턴인 플레이어의 기물만 고려
 			if (piece.whiteTeam == whiteTurn) continue;
 
-			// 현재 보드의 상태를 반영한 위치 정보 맵 생성
-
-			// 가능한 모든 움직임과 공격 위치 가져오기 (지역 변수 사용)
 			ArrayList<Position> possibleMoves = piece.canMove(posBool, pos, !whiteTurn);
 			ArrayList<Position> possibleHunts = piece.canHunt(posBool, pos, !whiteTurn);
 
-			// 움직임을 지역 변수로 복사하여 사용
 			ArrayList<Position> localCanMoves = new ArrayList<>(possibleMoves);
 			ArrayList<Position> localCanHunts = new ArrayList<>(possibleHunts);
 
-			// 가능한 모든 움직임을 확인
 			for (Position move : localCanMoves) {
 				Map<Piece, Position> testPos = new HashMap<>(piecePos);
 				testPos.put(piece, move);
-				checkCheck(testPos); // 이 움직임 후에 왕이 체크 상태인지 확인
+				checkCheck(testPos);
 
-				if (!checkForEnemy) { // 움직임 후 왕이 체크 상태가 아니라면
-					System.out.println(piece.name + piece.whiteTeam);
+				if (!checkForEnemy) {
 					hasLegalMove = true;
-					break; // 더 이상 확인할 필요 없음
+					break;
 				}
 			}
 
-			if (hasLegalMove) break; // 합법적인 움직임을 찾았으므로 종료
+			if (hasLegalMove) break;
 
-			// 가능한 모든 공격(캡처)을 확인
 			for (Position hunt : localCanHunts) {
 				Map<Piece, Position> testPos = new HashMap<>(piecePos);
 				Piece capturedPiece = shellPos.get(hunt).getPiece();
 				if (capturedPiece != null) {
-					testPos.remove(capturedPiece); // 캡처한 기물 제거
+					testPos.remove(capturedPiece);
 				}
-				testPos.put(piece, hunt); // 기물을 공격 위치로 이동
-				checkCheck(testPos); // 이 공격 후에 왕이 체크 상태인지 확인
+				testPos.put(piece, hunt);
+				checkCheck(testPos);
 
-				if (!checkForEnemy) { // 공격 후 왕이 체크 상태가 아니라면
-					System.out.println(piece.name);
+				if (!checkForEnemy) {
 					hasLegalMove = true;
-					break; // 더 이상 확인할 필요 없음
+					break;
 				}
 			}
 		}
